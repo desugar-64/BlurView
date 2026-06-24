@@ -7,6 +7,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.FrameLayout;
@@ -81,7 +82,7 @@ public class BlurView extends FrameLayout {
 
     /**
      * @param target      the root to start blur from.
-     * @param algorithm   sets the blur algorithm. Ignored on API >= 31 where efficient hardware rendering pipeline is used.
+     * @param algorithm   sets the blur algorithm. Ignored on API >= 29 where a hardware rendering pipeline is used.
      * @param scaleFactor a scale factor to downscale the view snapshot before blurring.
      *                    Helps achieving stronger blur and potentially better performance at the expense of blur precision.
      *                    The blur radius is essentially the radius * scaleFactor.
@@ -93,7 +94,13 @@ public class BlurView extends FrameLayout {
         if (BlurTarget.canUseHardwareRendering) {
             // Ignores the blur algorithm, always uses RenderEffect
             blurController = new RenderNodeBlurController(this, target, overlayColor, scaleFactor, applyNoise);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Ignores the blur algorithm, blurs the RenderNode snapshot with OpenGL
+            blurController = new OpenGLBlurController(this, target, overlayColor, scaleFactor, applyNoise);
         } else {
+            if (algorithm == null) {
+                algorithm = new RenderScriptBlur(getContext());
+            }
             blurController = new PreDrawBlurController(this, target, overlayColor, algorithm, scaleFactor, applyNoise);
         }
 
@@ -103,7 +110,7 @@ public class BlurView extends FrameLayout {
     /**
      * @param rootView    the root to start blur from.
      *                    BlurAlgorithm is automatically picked based on the API version.
-     *                    It uses RenderEffect on API 31+, and RenderScriptBlur on older versions.
+     *                    It uses RenderEffect on API 31+, OpenGL on API 29-30, and RenderScriptBlur below that.
      * @param scaleFactor a scale factor to downscale the view snapshot before blurring.
      *                    Helps achieving stronger blur and potentially better performance at the expense of blur precision.
      *                    The blur radius is essentially the radius * scaleFactor.
@@ -111,13 +118,11 @@ public class BlurView extends FrameLayout {
      * @return {@link BlurView} to setup needed params.
      */
     public BlurViewFacade setupWith(@NonNull BlurTarget rootView, float scaleFactor, boolean applyNoise) {
-        BlurAlgorithm algorithm;
-        if (BlurTarget.canUseHardwareRendering) {
-            // Ignores the blur algorithm, always uses RenderNodeBlurController and RenderEffect
-            algorithm = null;
-        } else {
-            algorithm = new RenderScriptBlur(getContext());
-        }
+        // The algorithm is only used by the PreDrawBlurController on API < 29. The RenderEffect and
+        // OpenGL paths record the snapshot from a RenderNode and ignore it.
+        BlurAlgorithm algorithm = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+                ? new RenderScriptBlur(getContext())
+                : null;
         return setupWith(rootView, algorithm, scaleFactor, applyNoise);
     }
 
