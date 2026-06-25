@@ -118,8 +118,8 @@ public class BlurView extends FrameLayout {
      * @return {@link BlurView} to setup needed params.
      */
     public BlurViewFacade setupWith(@NonNull BlurTarget rootView, float scaleFactor, boolean applyNoise) {
-        // The algorithm is only used by the PreDrawBlurController on API < 29. The RenderEffect and
-        // OpenGL paths record the snapshot from a RenderNode and ignore it.
+        // The algorithm is only used by the PreDrawBlurController on API < 29; the RenderEffect and
+        // OpenGL paths ignore it.
         BlurAlgorithm algorithm = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
                 ? new RenderScriptBlur(getContext())
                 : null;
