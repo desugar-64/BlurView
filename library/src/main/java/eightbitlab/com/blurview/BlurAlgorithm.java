@@ -38,4 +38,11 @@ public interface BlurAlgorithm {
     Bitmap.Config getSupportedBitmapConfig();
 
     void render(@NonNull Canvas canvas, @NonNull Bitmap bitmap);
+
+    /**
+     * Called when the BlurView leaves the window. Release any transient resources here; they will be
+     * rebuilt lazily on the next {@link #blur(Bitmap, float)}. Default is a no-op.
+     */
+    default void onDetached() {
+    }
 }

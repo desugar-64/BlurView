@@ -94,11 +94,11 @@ public class BlurView extends FrameLayout {
         if (BlurTarget.canUseHardwareRendering) {
             // Ignores the blur algorithm, always uses RenderEffect
             blurController = new RenderNodeBlurController(this, target, overlayColor, scaleFactor, applyNoise);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Ignores the blur algorithm, blurs the RenderNode snapshot with OpenGL
-            blurController = new OpenGLBlurController(this, target, overlayColor, scaleFactor, applyNoise);
         } else {
-            if (algorithm == null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Ignores the supplied blur algorithm, blurs the software snapshot with OpenGL
+                algorithm = new OpenGLBlurAlgorithm();
+            } else if (algorithm == null) {
                 algorithm = new RenderScriptBlur(getContext());
             }
             blurController = new PreDrawBlurController(this, target, overlayColor, algorithm, scaleFactor, applyNoise);
